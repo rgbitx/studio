@@ -81,7 +81,7 @@ const DEFAULT_FLAT_COLOR = { r: 1, g: 1, b: 1, a: 1 };
 const DEFAULT_MIN_COLOR = { r: 100, g: 47, b: 105, a: 1 };
 const DEFAULT_MAX_COLOR = { r: 227, g: 177, b: 135, a: 1 };
 const DEFAULT_RGB_BYTE_ORDER = "rgba";
-const SKIP_MIN_MAX = ["flat", "rgb", "rgba"];
+const NEEDS_MIN_MAX = ["gradient", "colormap"];
 
 const DEFAULT_SETTINGS: LayerSettingsPointCloudAndLaserScan = {
   visible: false,
@@ -728,13 +728,12 @@ export class PointCloudsAndLaserScans extends SceneExtension<PointCloudAndLaserS
     pointStep: number,
     settings: LayerSettingsPointCloudAndLaserScan,
   ): void {
-    if (SKIP_MIN_MAX.includes(settings.colorMode)) {
-      return;
-    }
-
     let minColorValue = settings.minValue ?? Number.POSITIVE_INFINITY;
     let maxColorValue = settings.maxValue ?? Number.NEGATIVE_INFINITY;
-    if (settings.minValue == undefined || settings.maxValue == undefined) {
+    if (
+      NEEDS_MIN_MAX.includes(settings.colorMode) &&
+      (settings.minValue == undefined || settings.maxValue == undefined)
+    ) {
       for (let i = 0; i < pointCount; i++) {
         const pointOffset = i * pointStep;
         const colorValue = colorReader(view, pointOffset);

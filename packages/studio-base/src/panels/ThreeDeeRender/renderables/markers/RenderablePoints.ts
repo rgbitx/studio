@@ -19,7 +19,7 @@ export class RenderablePoints extends RenderableMarker {
 
     this.geometry = new DynamicBufferGeometry();
     this.geometry.createAttribute("position", Float32Array, 3);
-    this.geometry.createAttribute("color", Uint8Array, 4);
+    this.geometry.createAttribute("color", Uint8Array, 4, true);
 
     this.points = new THREE.Points(this.geometry, makePointsMaterial(marker));
     this.add(this.points);

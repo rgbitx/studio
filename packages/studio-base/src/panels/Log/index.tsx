@@ -148,8 +148,6 @@ const LogPanel = React.memo(({ config, saveConfig }: Props) => {
     [msgEvents, minLogLevel, searchTerms, topicDatatype],
   );
 
-  const listRef = useRef<HTMLDivElement>(ReactNull);
-
   const [hasUserScrolled, setHasUserScrolled] = useState(false);
   const divRef = useRef<HTMLDivElement>(ReactNull);
 
@@ -213,7 +211,7 @@ const LogPanel = React.memo(({ config, saveConfig }: Props) => {
       </PanelToolbar>
       <Stack flexGrow={1} overflow="hidden">
         <div ref={divRef} className={classes.scrollArea} data-testid="log-messages-list">
-          <div ref={listRef}>{filteredMessages.map((msg, index) => renderMessage(msg, index))}</div>
+          <div>{filteredMessages.map((msg, index) => renderMessage(msg, index))}</div>
         </div>
       </Stack>
       {hasUserScrolled && (

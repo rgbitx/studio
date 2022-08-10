@@ -11,8 +11,8 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
-import { IconButton, IList, List } from "@fluentui/react";
-import { Box } from "@mui/material";
+import LastPageIcon from "@mui/icons-material/LastPage";
+import { Box, IconButton } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import produce from "immer";
 import { set } from "lodash";
@@ -35,8 +35,6 @@ import helpContent from "./index.help.md";
 import { buildSettingsTree } from "./settings";
 import { Config, LogMessageEvent } from "./types";
 
-type ArrayElementType<T extends readonly unknown[]> = T extends readonly (infer E)[] ? E : never;
-
 type Props = {
   config: Config;
   saveConfig: SaveConfig<Config>;
@@ -55,7 +53,7 @@ const SUPPORTED_DATATYPES = [
 const useStyles = makeStyles({
   scrollArea: {
     height: "100%",
-    overflow: "auto",
+    overflowY: "auto",
     display: "flex",
     flexDirection: "column-reverse",
   },
@@ -150,7 +148,7 @@ const LogPanel = React.memo(({ config, saveConfig }: Props) => {
     [msgEvents, minLogLevel, searchTerms, topicDatatype],
   );
 
-  const listRef = useRef<IList>(ReactNull);
+  const listRef = useRef<HTMLDivElement>(ReactNull);
 
   const [hasUserScrolled, setHasUserScrolled] = useState(false);
   const divRef = useRef<HTMLDivElement>(ReactNull);
@@ -165,6 +163,26 @@ const LogPanel = React.memo(({ config, saveConfig }: Props) => {
     // With column-reverse flex direction, 0 scroll top is the bottom (latest) message
     div.scrollTop = 0;
   }, []);
+
+  const renderMessage = useCallback(
+    (message: LogMessageEvent, index: number) => {
+      const datatype = datatypeByTopic.get(message.topic);
+      if (!datatype) {
+        return;
+      }
+
+      const normalizedLog = normalizedLogMessage(datatype, message["message"]);
+      return (
+        <LogMessage
+          key={index}
+          value={normalizedLog}
+          timestampFormat={timeFormat}
+          timeZone={timeZone}
+        />
+      );
+    },
+    [datatypeByTopic, timeFormat, timeZone],
+  );
 
   useLayoutEffect(() => {
     const div = divRef.current;
@@ -194,40 +212,19 @@ const LogPanel = React.memo(({ config, saveConfig }: Props) => {
         />
       </PanelToolbar>
       <Stack flexGrow={1} overflow="hidden">
-        <div ref={divRef} className={classes.scrollArea}>
-          {/* items property wants a mutable array but filteredMessages is readonly */}
-          <List
-            componentRef={listRef}
-            items={filteredMessages as ArrayElementType<typeof filteredMessages>[]}
-            onRenderCell={(item) => {
-              if (!item) {
-                return;
-              }
-
-              const datatype = datatypeByTopic.get(item.topic);
-              if (!datatype) {
-                return;
-              }
-
-              const normalizedLog = normalizedLogMessage(datatype, item["message"]);
-              return (
-                <LogMessage
-                  value={normalizedLog}
-                  timestampFormat={timeFormat}
-                  timeZone={timeZone}
-                />
-              );
-            }}
-          />
+        <div ref={divRef} className={classes.scrollArea} data-testid="log-messages-list">
+          <div ref={listRef}>{filteredMessages.map((msg, index) => renderMessage(msg, index))}</div>
         </div>
       </Stack>
       {hasUserScrolled && (
         <Box position="absolute" bottom={10} right={10}>
           <IconButton
-            iconProps={{ iconName: "DoubleChevronDown" }}
             title="Scroll to bottom"
             onClick={scrollToBottomAction}
-          />
+            style={{ transform: "rotate(90deg)" }}
+          >
+            <LastPageIcon />
+          </IconButton>
         </Box>
       )}
     </Stack>

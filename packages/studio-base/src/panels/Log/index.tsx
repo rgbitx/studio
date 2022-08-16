@@ -11,12 +11,12 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
-import LastPageIcon from "@mui/icons-material/LastPage";
-import { Box, IconButton } from "@mui/material";
-import { makeStyles } from "@mui/styles";
+import DoubleArrowDownIcon from "@mui/icons-material/KeyboardDoubleArrowDown";
+import { Fab } from "@mui/material";
 import produce from "immer";
 import { set } from "lodash";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { makeStyles } from "tss-react/mui";
 
 import { SettingsTreeAction } from "@foxglove/studio";
 import { useDataSourceInfo, useMessagesByTopic } from "@foxglove/studio-base/PanelAPI";
@@ -50,17 +50,16 @@ const SUPPORTED_DATATYPES = [
   "foxglove.Log",
 ];
 
-const useStyles = makeStyles({
-  scrollArea: {
-    height: "100%",
-    overflowY: "auto",
-    display: "flex",
-    flexDirection: "column-reverse",
+const useStyles = makeStyles()((theme) => ({
+  floatingButton: {
+    position: "absolute",
+    bottom: theme.spacing(1),
+    right: theme.spacing(1.5),
   },
-});
+}));
 
 const LogPanel = React.memo(({ config, saveConfig }: Props) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const { topics } = useDataSourceInfo();
   const { minLogLevel, searchTerms } = config;
   const { timeFormat, timeZone } = useAppTimeFormat();
@@ -68,9 +67,7 @@ const LogPanel = React.memo(({ config, saveConfig }: Props) => {
   const updatePanelSettingsTree = usePanelSettingsTreeUpdate();
 
   const onFilterChange = useCallback<FilterBarProps["onFilterChange"]>(
-    (filter) => {
-      saveConfig({ minLogLevel: filter.minLogLevel, searchTerms: filter.searchTerms });
-    },
+    (filter) => saveConfig({ minLogLevel: filter.minLogLevel, searchTerms: filter.searchTerms }),
     [saveConfig],
   );
 
@@ -210,20 +207,25 @@ const LogPanel = React.memo(({ config, saveConfig }: Props) => {
         />
       </PanelToolbar>
       <Stack flexGrow={1} overflow="hidden">
-        <div ref={divRef} className={classes.scrollArea} data-testid="log-messages-list">
-          <div>{filteredMessages.map((msg, index) => renderMessage(msg, index))}</div>
-        </div>
+        <Stack
+          ref={divRef}
+          fullHeight
+          overflowY="auto"
+          direction="column-reverse"
+          data-testid="log-messages-list"
+        >
+          {filteredMessages.map((msg, index) => renderMessage(msg, index))}
+        </Stack>
       </Stack>
       {hasUserScrolled && (
-        <Box position="absolute" bottom={10} right={10}>
-          <IconButton
-            title="Scroll to bottom"
-            onClick={scrollToBottomAction}
-            style={{ transform: "rotate(90deg)" }}
-          >
-            <LastPageIcon />
-          </IconButton>
-        </Box>
+        <Fab
+          size="small"
+          title="Scroll to bottom"
+          onClick={scrollToBottomAction}
+          className={classes.floatingButton}
+        >
+          <DoubleArrowDownIcon />
+        </Fab>
       )}
     </Stack>
   );

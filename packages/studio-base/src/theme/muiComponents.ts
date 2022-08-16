@@ -84,6 +84,14 @@ export default function muiComponents(theme: Theme): ThemeOptions["components"] 
         },
       },
     },
+    MuiFab: {
+      styleOverrides: {
+        root: {
+          backgroundColor: theme.palette.background.paper,
+          boxShadow: theme.shadows[2],
+        },
+      },
+    },
     MuiFormControl: {
       defaultProps: {
         variant: "standard",

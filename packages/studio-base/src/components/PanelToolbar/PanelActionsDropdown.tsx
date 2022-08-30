@@ -159,9 +159,9 @@ export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
         }}
       >
         <ChangePanelMenuItem tabId={tabId} />
-        {menuItems.map((item) =>
+        {menuItems.map((item, idx) =>
           item.type === "divider" ? (
-            <Divider variant="middle" />
+            <Divider key={`divider-${idx}`} variant="middle" />
           ) : (
             <MenuItem
               key={item.key}

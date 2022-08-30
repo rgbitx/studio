@@ -30,13 +30,11 @@ type PanelToolbarControlsProps = {
   additionalIcons?: React.ReactNode;
   isUnknownPanel: boolean;
   menuOpen: boolean;
-  // eslint-disable-next-line @foxglove/no-boolean-parameters
-  setMenuOpen: (_: boolean) => void;
 };
 
 const PanelToolbarControlsComponent = forwardRef<HTMLDivElement, PanelToolbarControlsProps>(
   (props, ref) => {
-    const { additionalIcons, isUnknownPanel, menuOpen, setMenuOpen } = props;
+    const { additionalIcons, isUnknownPanel, menuOpen } = props;
     const panelId = useContext(PanelContext)?.id;
     const { setSelectedPanelIds } = useSelectedPanels();
     const { openPanelSettings } = useWorkspace();
@@ -64,11 +62,7 @@ const PanelToolbarControlsComponent = forwardRef<HTMLDivElement, PanelToolbarCon
             <SettingsIcon />
           </ToolbarIconButton>
         )}
-        <PanelActionsDropdown
-          isOpen={menuOpen}
-          setIsOpen={setMenuOpen}
-          isUnknownPanel={isUnknownPanel}
-        />
+        <PanelActionsDropdown isOpen={menuOpen} isUnknownPanel={isUnknownPanel} />
       </Stack>
     );
   },

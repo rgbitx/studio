@@ -11,25 +11,41 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
-import { ContextualMenu, IContextualMenuItem } from "@fluentui/react";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { useCallback, useContext, useMemo, useRef } from "react";
+import { Divider, Menu, MenuItem } from "@mui/material";
+import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { MosaicContext, MosaicNode, MosaicWindowContext } from "react-mosaic-component";
+import { makeStyles } from "tss-react/mui";
 
 import PanelContext from "@foxglove/studio-base/components/PanelContext";
-import PanelList, { PanelSelection } from "@foxglove/studio-base/components/PanelList";
+import ChangePanelMenuItem from "@foxglove/studio-base/components/PanelToolbar/ChangePanelMenuItem";
 import ToolbarIconButton from "@foxglove/studio-base/components/PanelToolbar/ToolbarIconButton";
 import { getPanelTypeFromMosaic } from "@foxglove/studio-base/components/PanelToolbar/utils";
 import { useCurrentLayoutActions } from "@foxglove/studio-base/context/CurrentLayoutContext";
 
 type Props = {
   isOpen: boolean;
-  // eslint-disable-next-line @foxglove/no-boolean-parameters
-  setIsOpen: (_: boolean) => void;
   isUnknownPanel: boolean;
 };
 
-export function PanelActionsDropdown({ isOpen, setIsOpen, isUnknownPanel }: Props): JSX.Element {
+const useStyles = makeStyles()((theme) => ({
+  error: {
+    color: theme.palette.error.main,
+  },
+}));
+
+export function PanelActionsDropdown({ isOpen, isUnknownPanel }: Props): JSX.Element {
+  const { classes } = useStyles();
+  const [anchorEl, setAnchorEl] = useState<undefined | HTMLElement>(undefined);
+  const menuOpen = isOpen || Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(undefined);
+  };
+
   const panelContext = useContext(PanelContext);
   const tabId = panelContext?.tabId;
   const { mosaicActions } = useContext(MosaicContext);
@@ -38,7 +54,6 @@ export function PanelActionsDropdown({ isOpen, setIsOpen, isUnknownPanel }: Prop
     getCurrentLayoutState: getCurrentLayout,
     closePanel,
     splitPanel,
-    swapPanel,
   } = useCurrentLayoutActions();
   const getPanelType = useCallback(
     () => getPanelTypeFromMosaic(mosaicWindowActions, mosaicActions),
@@ -73,79 +88,20 @@ export function PanelActionsDropdown({ isOpen, setIsOpen, isUnknownPanel }: Prop
     [getCurrentLayout, getPanelType, mosaicActions, mosaicWindowActions, splitPanel, tabId],
   );
 
-  const swap = useCallback(
-    (id?: string) =>
-      ({ type, config, relatedConfigs }: PanelSelection) => {
-        // Reselecting current panel type is a no-op.
-        if (type === panelContext?.type) {
-          setIsOpen(false);
-          return;
-        }
+  const menuItems = useMemo(() => {
+    const items = [];
 
-        swapPanel({
-          tabId,
-          originalId: id ?? "",
-          type,
-          root: mosaicActions.getRoot() as MosaicNode<string>,
-          path: mosaicWindowActions.getPath(),
-          config: config ?? {},
-          relatedConfigs,
-        });
-      },
-    [mosaicActions, mosaicWindowActions, panelContext?.type, setIsOpen, swapPanel, tabId],
-  );
-
-  const menuItems: IContextualMenuItem[] = useMemo(() => {
-    const items: IContextualMenuItem[] = [
-      {
-        key: "change-panel",
-        text: "Change panel",
-        onClick: () => undefined,
-        iconProps: {
-          iconName: "ShapeSubtract",
-          styles: { root: { height: 24, marginLeft: 2, marginRight: 6 } },
-        },
-        subMenuProps: {
-          items: [{ key: "dummy" }],
-          calloutProps: {
-            // https://github.com/foxglove/studio/issues/2205
-            // https://github.com/microsoft/fluentui/issues/18839
-            // Lie to the callout and tell it the height of the content so that it keeps the top
-            // edge anchored as the user searches panels and the PanelList changes height.
-            calloutMaxHeight: 310,
-            finalHeight: 310,
-            styles: {
-              calloutMain: { overflowY: "auto !important" },
-            },
-          },
-          onRenderMenuList: () => (
-            <PanelList
-              selectedPanelType={panelContext?.type}
-              onPanelSelect={swap(panelContext?.id)}
-            />
-          ),
-        },
-      },
-    ];
     if (!isUnknownPanel) {
       items.push(
         {
           key: "hsplit",
           text: "Split horizontal",
           onClick: () => split(panelContext?.id, "column"),
-          iconProps: {
-            iconName: "SplitHorizontal",
-            styles: { root: { height: 24, marginLeft: 2, marginRight: 6 } },
-          },
         },
         {
           key: "vsplit",
           text: "Split vertical",
           onClick: () => split(panelContext?.id, "row"),
-          iconProps: {
-            iconName: "SplitVertical",
-            styles: { root: { height: 24, marginLeft: 2, marginRight: 6 } },
-          },
         },
       );
     }
@@ -155,43 +111,68 @@ export function PanelActionsDropdown({ isOpen, setIsOpen, isUnknownPanel }: Prop
         key: "enter-fullscreen",
         text: "Fullscreen",
         onClick: panelContext?.enterFullscreen,
-        iconProps: {
-          iconName: "FullScreenMaximize",
-          styles: { root: { height: 24, marginLeft: 2, marginRight: 6 } },
-        },
         "data-testid": "panel-menu-fullscreen",
       });
     }
+
+    items.push({ key: "divider", type: "divider" });
 
     items.push({
       key: "remove",
       text: "Remove panel",
       onClick: close,
-      iconProps: { iconName: "Delete" },
       "data-testid": "panel-menu-remove",
+      className: classes.error,
     });
 
     return items;
-  }, [close, isUnknownPanel, panelContext, split, swap]);
+  }, [classes, close, isUnknownPanel, panelContext, split]);
 
   const buttonRef = useRef<HTMLDivElement>(ReactNull);
-
   const type = getPanelType();
+
   if (type == undefined) {
     return <></>;
   }
 
   return (
     <div ref={buttonRef}>
-      <ContextualMenu
-        hidden={!isOpen}
-        items={menuItems}
-        target={buttonRef}
-        onDismiss={() => setIsOpen(false)}
-      />
-      <ToolbarIconButton title="More" data-testid="panel-menu" onClick={() => setIsOpen(!isOpen)}>
+      <ToolbarIconButton
+        id="panel-menu-button"
+        aria-controls={menuOpen ? "panel-menu" : undefined}
+        aria-haspopup="true"
+        aria-expanded={menuOpen ? "true" : undefined}
+        onClick={handleClick}
+        data-testid="panel-menu"
+        title="More"
+      >
         <MoreVertIcon />
       </ToolbarIconButton>
+      <Menu
+        id="panel-menu"
+        anchorEl={anchorEl}
+        open={menuOpen}
+        onClose={handleClose}
+        MenuListProps={{
+          "aria-labelledby": "panel-menu-button",
+        }}
+      >
+        <ChangePanelMenuItem tabId={tabId} />
+        {menuItems.map((item) =>
+          item.type === "divider" ? (
+            <Divider variant="middle" />
+          ) : (
+            <MenuItem
+              key={item.key}
+              onClick={item.onClick}
+              className={item.className}
+              data-testid={item["data-testid"]}
+            >
+              {item.text}
+            </MenuItem>
+          ),
+        )}
+      </Menu>
     </div>
   );
 }

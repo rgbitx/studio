@@ -24,20 +24,17 @@ import { getPanelTypeFromMosaic } from "@foxglove/studio-base/components/PanelTo
 import { useCurrentLayoutActions } from "@foxglove/studio-base/context/CurrentLayoutContext";
 
 type Props = {
-  isOpen: boolean;
   isUnknownPanel: boolean;
 };
 
 const useStyles = makeStyles()((theme) => ({
-  error: {
-    color: theme.palette.error.main,
-  },
+  error: { color: theme.palette.error.main },
 }));
 
-export function PanelActionsDropdown({ isOpen, isUnknownPanel }: Props): JSX.Element {
+export function PanelActionsDropdown({ isUnknownPanel }: Props): JSX.Element {
   const { classes } = useStyles();
   const [anchorEl, setAnchorEl] = useState<undefined | HTMLElement>(undefined);
-  const menuOpen = isOpen || Boolean(anchorEl);
+  const menuOpen = Boolean(anchorEl);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -153,6 +150,10 @@ export function PanelActionsDropdown({ isOpen, isUnknownPanel }: Props): JSX.Ele
         anchorEl={anchorEl}
         open={menuOpen}
         onClose={handleClose}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
         MenuListProps={{
           "aria-labelledby": "panel-menu-button",
         }}
